@@ -102,19 +102,56 @@ public class Particle {
     public void bounceOff(Particle o) {
         double dx = o.x - this.x;
         double dy = o.y - this.y;
-        double dvx = o.getSpeedX() - this.getSpeedY();
-        double dvy = o.getSpeedY() - this.getSpeedX();
+        double dist = radius + o.radius;
+        /*if( (dx*dx + dy*dy) > (dist*dist)){
+            System.out.println("MAAL");
+            //timesModified++;
+            //o.timesModified++;
+            return;
+        }*/
+        double dvx = o.getSpeedX() - this.getSpeedX();
+        double dvy = o.getSpeedY() - this.getSpeedY();
         double dvdr = dx * dvx + dy * dvy;
-        double dist = o.radius + o.radius;
-        double F = 2 * mass * o.mass * dvdr / ((mass + o.mass) * dist);
+
+        double F = (2 * mass * o.mass * dvdr) / ((mass + o.mass) * dist);
         double fx = F * dx / dist;
         double fy = F * dy / dist;
         this.vx += fx / mass;
         this.vy += fy / mass;
         o.vx -= fx / o.mass;
         o.vy -= fy / o.mass;
+    /*
+        double d = Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2));
+        double nx = (o.x - x) / d;
+        double ny = (o.y- y) / d;
+        double p = 2 * (vx * nx + vy * ny - o.vx * nx - o.vy * ny) /
+                (mass + o.mass);
+        vx = vx - p * mass * nx;
+        vy = vy - p * mass * ny;
+        o.vx = o.vx + p * o.mass * nx;
+        o.vy = o.vy + p * o.mass * ny;
+*/
         timesModified++;
         o.timesModified++;
+    }
+
+    public double predict(Particle o){ // VER WHITE PAPER EN CAMPUS
+        double dx = o.x - this.x;
+        double dy = o.y - this.y;
+        double dvx = o.getSpeedX() - this.getSpeedX();
+        double dvy = o.getSpeedY() - this.getSpeedY();
+        double dvdr = dvx*dx + dvy*dy;
+        if(dvdr >= 0 ){
+            return -1;
+        }
+        double dvdv = dvx*dvx + dvy*dvy;
+        double drdr = dx*dx + dy*dy;
+        double d = dvdr*dvdr - dvdv*(drdr - (radius + o.radius)*(radius + o.radius));
+        if(d < 0 ){
+            return -1;
+        }
+
+        return -(dvdr + Math.sqrt(d))/dvdv;
     }
 
         @Override

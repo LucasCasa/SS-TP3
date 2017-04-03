@@ -35,9 +35,7 @@ public class Collision implements Comparable<Collision> {
     }
 
     private void collideWithParticle() {
-        if(p1.getTimesModified() != modifiedP1 || p2.getTimesModified() != modifiedP2){
-            return;
-        }
+        p1.bounceOff(p2);
     }
 
     private void collideWithWall() {
@@ -59,5 +57,11 @@ public class Collision implements Comparable<Collision> {
     @Override
     public int compareTo(Collision o) {
         return (int) ((time - o.time) * 100000);
+    }
+    public boolean isValid(){
+        if(wall){
+            return p1.timesModified == modifiedP1;
+        }
+        return p1.timesModified == modifiedP1 && p2.timesModified == modifiedP2;
     }
 }
