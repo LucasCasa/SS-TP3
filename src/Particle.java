@@ -120,17 +120,6 @@ public class Particle {
         this.vy += fy / mass;
         o.vx -= fx / o.mass;
         o.vy -= fy / o.mass;
-    /*
-        double d = Math.sqrt(Math.pow(x - o.x, 2) + Math.pow(y - o.y, 2));
-        double nx = (o.x - x) / d;
-        double ny = (o.y- y) / d;
-        double p = 2 * (vx * nx + vy * ny - o.vx * nx - o.vy * ny) /
-                (mass + o.mass);
-        vx = vx - p * mass * nx;
-        vy = vy - p * mass * ny;
-        o.vx = o.vx + p * o.mass * nx;
-        o.vy = o.vy + p * o.mass * ny;
-*/
         timesModified++;
         o.timesModified++;
     }
@@ -167,13 +156,41 @@ public class Particle {
     }
     // TODO: BIEN LAS COLISIONES, MAS CUANDO HAYA MAS DE UNA PARED
     public double timeToHitLeftWall() {
-        return (vx < 0)? (radius - x) / vx : -1;
+        if(vx > 0 ){
+            return -1;
+        }
+        double timeToMiddle = (radius - x + 12) / vx;
+        double timeToBorder = (radius - x) / vx;
+        if(x <= 12){
+            return timeToBorder;
+        }else{
+            double ypos = y + vy*timeToMiddle;
+            if(ypos > 9.0/2 + GasSimulation.apertura / 2 || ypos < 9.0/2 - GasSimulation.apertura / 2){
+                return timeToMiddle;
+            }else{
+                return timeToBorder;
+            }
+        }
     }
     public double timeToHitRightWall() {
-        return (vx > 0)? ( 9 - radius - x) / vx : -1;
+        if(vx < 0 ){
+            return -1;
+        }
+        double timeToMiddle = (12 - radius - x) / vx;
+        double timeToBorder = (24 - radius - x) / vx;
+        if(x <= 12){
+            double ypos = y + vy*timeToMiddle;
+            if(ypos > 9.0/2 + GasSimulation.apertura / 2 || ypos < 9.0/2 - GasSimulation.apertura / 2){
+                return timeToMiddle;
+            }else{
+                return timeToBorder;
+            }
+        }else {
+            return timeToBorder;
+        }
     }
     public double timeToHitTopWall() {
-        return (vy > 0)? ( 12 - radius - y) / vy : -1;
+        return (vy > 0)? ( 9 - radius - y) / vy : -1;
     }
     public double timeToHitBottomWall() {
         return (vy < 0)? (radius - y) / vy : -1;
@@ -183,5 +200,9 @@ public class Particle {
         x += vx * (time - lastUpdate);
         y += vy * (time - lastUpdate);
         lastUpdate = time;
+    }
+
+    public double getMod() {
+        return vx*vx + vy*vy;
     }
 }

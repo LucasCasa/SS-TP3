@@ -8,11 +8,11 @@ public class Main {
     public static void main(String[] args) throws IOException {
         System.out.println("TEST");
         //TODAS LAS UNIDADES EN CENTIMETROS
-        List<Particle> p = Generator.generateFile(9,12,100, 0.15,1,1);
+        List<Particle> p = Generator.generateFile(12,9,300, 0.15,1,1);
 
         GasSimulation gs = new GasSimulation(p);
 
-        gs.simulate(50);
+        gs.simulate(1000);
 
     }
 }
