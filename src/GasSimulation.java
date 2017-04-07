@@ -14,7 +14,12 @@ public class GasSimulation {
     double deltaTime = 0.1;
     List<Particle> particles;
     List<Point2D> distribution;
-    public static double apertura = 1;
+    boolean stationary = false;
+    public static double apertura = 0.01;
+    public static double width = 0.24;
+    public static double height = 0.09;
+    double startStationary = 0;
+    double pressure = 0;
     Queue<Collision> queue = new PriorityQueue<>();
 
     public GasSimulation(List<Particle> p){
@@ -32,7 +37,7 @@ public class GasSimulation {
             Collision c = queue.poll();
             if (c.isValid()){
                 if((c.time - lastdraw) > deltaTime) {
-                    getDistribution();
+                    getDistribution(currentTime);
                     for (double i = currentTime; i < c.time; i += deltaTime) {
                         updateAllParticles(i);
                         StringBuilder s = new StringBuilder();
@@ -46,15 +51,27 @@ public class GasSimulation {
                     }
                 }
                 currentTime = c.time;
+
                 updateAllParticles(currentTime);
+                if(stationary){
+                    addPressure(c);
+                }
                 c.collide();
-                //System.out.println(currentTime);
                 setCollision(c.p1, currentTime);
                 if (c.p2 != null) {
                     setCollision(c.p2, currentTime);
                 }
             }
         }
+        System.out.println("Empezo el estacionario en: " + startStationary);
+        System.out.println("Presion total: " + pressure);
+        System.out.println("Area: " + (width*height));
+        System.out.println("Tiempo total: " + (maxTime  - startStationary));
+        pressure /= (maxTime  - startStationary);
+        pressure /= width*height;
+        System.out.println(pressure);
+        System.out.println("SQRT:" + Math.sqrt(pressure));
+        System.out.println("T:" + (pressure*(2*width + 2*height)/(particles.size()*1.38*Math.pow(10,-23))) );
         dist.close();
         dist = new FileWriter("dist.txt");
         for(Point2D p : distribution){
@@ -63,32 +80,48 @@ public class GasSimulation {
         dist.close();
     }
 
-    private void getDistribution() {
+    private void addPressure(Collision c) {
+        if(c.wall){
+            if(c.w == Wall.BOTTOM || c.w == Wall.TOP){
+                pressure += 2*Math.abs(c.p1.vy)*c.p1.mass;
+            }else{
+                pressure += 2*Math.abs(c.p1.vx)*c.p1.mass;
+            }
+        }
+    }
+
+    private void getDistribution(double time) {
         double left = 0,right = 0;
         for(Particle p : particles){
-            if(p.x < 12){
+            if(p.x < width / 2){
                 left+=1;
             }else{
                 right+=1;
             }
         }
         distribution.add(new Point2D.Double(left / particles.size(),right / particles.size()));
+        if(left / particles.size() > 0.48 && left / particles.size() < 0.52){
+            if(!stationary){
+                startStationary = time;
+            }
+            stationary = true;
+        }
     }
 
     private int printBox(StringBuilder s) {
         int count = 0;
-        for(double i = 0; i<9;i+=0.1){
-            s.append(0 + "\t" + i + "\t" + 0.15 + "\t" + 0 + "\t" + 0 + "\t0\n");
-            s.append(24 + "\t" + i + "\t" + 0.15 + "\t" + 0 + "\t" + 0 + "\t0\n");
+        for(double i = 0; i<height;i+=0.001){
+            s.append(0 + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
+            s.append(width + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
             count+= 2;
-            if(i< (9.0/2 - apertura) || i > (9.0/2 + apertura)){
-                s.append(12 + "\t" + i + "\t" + 0.15 + "\t" + 0 + "\t" + 0 + "\t0\n");
+            if(i< (height / 2 - apertura) || i > (height / 2 + apertura)){
+                s.append((width /2) + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
                 count++;
             }
         }
-        for(double i = 0; i<24;i+=0.1){
-            s.append(i + "\t" + 9 + "\t" + 0.15 + "\t" + 0 + "\t" + 0 + "\t0\n");
-            s.append(i + "\t" + 0 + "\t" + 0.15 + "\t" + 0 + "\t" + 0 + "\t0\n");
+        for(double i = 0; i<width;i+=0.001){
+            s.append(i + "\t" + height + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
+            s.append(i + "\t" + 0 + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
             count+= 2;
         }
         return count;

@@ -99,6 +99,7 @@ public class Particle {
     public int getTimesModified(){
        return timesModified;
     }
+
     public void bounceOff(Particle o) {
         double dx = o.x - this.x;
         double dy = o.y - this.y;
@@ -123,7 +124,6 @@ public class Particle {
         timesModified++;
         o.timesModified++;
     }
-
     public double predict(Particle o){ // VER WHITE PAPER EN CAMPUS
         double dx = o.x - this.x;
         double dy = o.y - this.y;
@@ -159,13 +159,13 @@ public class Particle {
         if(vx > 0 ){
             return -1;
         }
-        double timeToMiddle = (radius - x + 12) / vx;
+        double timeToMiddle = (radius - x + GasSimulation.width / 2) / vx;
         double timeToBorder = (radius - x) / vx;
-        if(x <= 12){
+        if(x <= GasSimulation.width / 2){
             return timeToBorder;
         }else{
             double ypos = y + vy*timeToMiddle;
-            if(ypos > 9.0/2 + GasSimulation.apertura / 2 || ypos < 9.0/2 - GasSimulation.apertura / 2){
+            if(ypos > GasSimulation.height / 2 + GasSimulation.apertura / 2 || ypos < GasSimulation.height / 2 - GasSimulation.apertura / 2){
                 return timeToMiddle;
             }else{
                 return timeToBorder;
@@ -176,11 +176,11 @@ public class Particle {
         if(vx < 0 ){
             return -1;
         }
-        double timeToMiddle = (12 - radius - x) / vx;
-        double timeToBorder = (24 - radius - x) / vx;
-        if(x <= 12){
+        double timeToMiddle = (GasSimulation.width / 2 - radius - x) / vx;
+        double timeToBorder = (GasSimulation.width - radius - x) / vx;
+        if(x <= GasSimulation.width / 2){
             double ypos = y + vy*timeToMiddle;
-            if(ypos > 9.0/2 + GasSimulation.apertura / 2 || ypos < 9.0/2 - GasSimulation.apertura / 2){
+            if(ypos > GasSimulation.height / 2 + GasSimulation.apertura / 2 || ypos < GasSimulation.height /2 - GasSimulation.apertura / 2){
                 return timeToMiddle;
             }else{
                 return timeToBorder;
@@ -190,7 +190,7 @@ public class Particle {
         }
     }
     public double timeToHitTopWall() {
-        return (vy > 0)? ( 9 - radius - y) / vy : -1;
+        return (vy > 0)? ( GasSimulation.height - radius - y) / vy : -1;
     }
     public double timeToHitBottomWall() {
         return (vy < 0)? (radius - y) / vy : -1;

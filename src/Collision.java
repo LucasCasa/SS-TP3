@@ -49,6 +49,7 @@ public class Collision implements Comparable<Collision> {
                 break;
             case LEFT:
             case RIGHT:
+
                 p1.setSpeedX(-p1.getSpeedX());
                 break;
         }
