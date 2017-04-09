@@ -104,12 +104,6 @@ public class Particle {
         double dx = o.x - this.x;
         double dy = o.y - this.y;
         double dist = radius + o.radius;
-        /*if( (dx*dx + dy*dy) > (dist*dist)){
-            System.out.println("MAAL");
-            //timesModified++;
-            //o.timesModified++;
-            return;
-        }*/
         double dvx = o.getSpeedX() - this.getSpeedX();
         double dvy = o.getSpeedY() - this.getSpeedY();
         double dvdr = dx * dvx + dy * dvy;
@@ -124,7 +118,7 @@ public class Particle {
         timesModified++;
         o.timesModified++;
     }
-    public double predict(Particle o){ // VER WHITE PAPER EN CAMPUS
+    public double predict(Particle o){
         double dx = o.x - this.x;
         double dy = o.y - this.y;
         double dvx = o.getSpeedX() - this.getSpeedX();

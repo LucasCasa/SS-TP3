@@ -29,7 +29,7 @@ public class Generator {
                 for(Particle op : ps){
                     if(Particle.dist2(p,op) < (p.getRadius()+op.getRadius())*(p.getRadius()+op.getRadius())){
                         collision = true;
-                        System.out.println("COLISION: Particula1: "+p +" Existente:" + op);
+                        //System.out.println("COLISION: Particula1: "+p +" Existente:" + op);
                         p.setX(Math.random()*(x-2*r) + r);
                         p.setY(Math.random()*(y-2*r) + r);
                         break;
@@ -38,12 +38,12 @@ public class Generator {
             }while(collision);
             ps.add(p);
         }
-
+        /*
         try {
             FileWriter d = new FileWriter("Inicial.txt");
             d.write(n + "\n" );//+ x + "\n" + y + "\n");
             for(Particle p : ps){
-                d.write(p.x + "\t" + p.y + "\t"+ p.getRadius() + "\t" + p.getMass() + "\t" + p.getSpeedX() + "\t" + p.getSpeedY() +"\n");
+                //d.write(p.x + "\t" + p.y + "\t"+ p.getRadius() + "\t" + p.getMass() + "\t" + p.getSpeedX() + "\t" + p.getSpeedY() +"\n");
             }
             d.close();
 
@@ -51,6 +51,7 @@ public class Generator {
             e.printStackTrace();
             return null;
         }
+        */
 //        //  CellIndex.calculateNeighbors(ps,n,l,2);
 
         return ps;

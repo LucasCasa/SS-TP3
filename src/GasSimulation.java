@@ -15,9 +15,14 @@ public class GasSimulation {
     List<Particle> particles;
     List<Point2D> distribution;
     boolean stationary = false;
-    public static double apertura = 0.01;
+    public static double apertura = 0.005;
     public static double width = 0.24;
     public static double height = 0.09;
+    int boxSize = 0;
+    public int intFactor = 10000;
+    public int widthInt = (int)(width*intFactor);
+    public int heightInt = (int)(height*intFactor);
+    ArrayList<ArrayList<String>> values;
     double startStationary = 0;
     double pressure = 0;
     Queue<Collision> queue = new PriorityQueue<>();
@@ -26,58 +31,117 @@ public class GasSimulation {
         particles = p;
     }
 
-    public void simulate(int maxTime) throws IOException {
-        distribution = new ArrayList<>(maxTime);
+    public double simulate(int maxTime,boolean saveStates) throws IOException {
+
+        if (saveStates){
+            distribution = new ArrayList<>(maxTime*10);
+            values = new ArrayList<>(maxTime * 10);
+            for (int i = 0; i < maxTime * 10; i++) {
+                values.add(new ArrayList<>(particles.size() + 1));
+            }
+        }
+        int iter = 0;
         double currentTime = 0;
         setAllColisions(0);
-        FileWriter dist = null;
-        double lastdraw = 0;
-        dist = new FileWriter("out.txt");
+        double lastdraw = -0.1;
         while(currentTime < maxTime && !queue.isEmpty()) {
             Collision c = queue.poll();
-            if (c.isValid()){
-                if((c.time - lastdraw) > deltaTime) {
-                    getDistribution(currentTime);
-                    for (double i = currentTime; i < c.time; i += deltaTime) {
-                        updateAllParticles(i);
-                        StringBuilder s = new StringBuilder();
-                        int a = printBox(s);
-                        dist.write((a +particles.size()) + "\n" + i + "\n");
-                        dist.write(s.toString());
-                        for (Particle p : particles)
-                            dist.write(p.x + "\t" + p.y + "\t" + p.radius + "\t" + p.getSpeedX() + "\t" + p.getSpeedY() + "\t" +p.getMod()+ "\n");
-                        currentTime = i;
-                        lastdraw = currentTime;
+            if (c.isValid() && c.time <= maxTime) {
+                getDistribution(currentTime,saveStates);
+                if (saveStates && (c.time - lastdraw) > deltaTime) {
+                    for (double i = lastdraw+deltaTime; i < c.time; i += deltaTime) {
+                        saveValues(i,iter);
+                        lastdraw = i;
+                        iter++;
                     }
                 }
-                currentTime = c.time;
-
-                updateAllParticles(currentTime);
-                if(stationary){
+                if (stationary) {
                     addPressure(c);
                 }
-                c.collide();
-                setCollision(c.p1, currentTime);
-                if (c.p2 != null) {
-                    setCollision(c.p2, currentTime);
+                currentTime = collide(c);
+            }
+        }
+        printData(maxTime);
+        return pressure;
+    }
+
+    private void printData(double maxTime) {
+        System.out.println("Empezo el estacionario en: " + startStationary);
+        pressure /= (maxTime  - startStationary);
+        pressure /= 2*width + 2*height;
+        System.out.println("Presion: " + pressure);
+    }
+
+    public double simulate(boolean save) throws IOException{
+        if (save){
+            distribution = new ArrayList<>(1000*10);
+            values = new ArrayList<>(1000 * 10);
+        }
+        int iter = 0;
+        double currentTime = 0;
+        setAllColisions(0);
+        double lastdraw = -0.1;
+        while(!stationary && !queue.isEmpty()) {
+            Collision c = queue.poll();
+            if (c.isValid()) {
+                getDistribution(currentTime,save);
+                if (save && (c.time - lastdraw) > deltaTime) {
+                    for (double i = lastdraw+deltaTime; i < c.time; i += deltaTime) {
+                        saveValues(i, iter);
+                        lastdraw = i;
+                        iter++;
+                    }
+
+                }
+            currentTime = collide(c);
+            }
+        }
+        /*
+        if(stationary) {
+            while (currentTime < startStationary*2) {
+                Collision c = queue.poll();
+                if (c.isValid()) {
+                    getDistribution(currentTime,save);
+                    if (save && (c.time - lastdraw) > deltaTime) {
+                        for (double i = lastdraw+deltaTime; i < c.time; i += deltaTime) {
+                            saveValues(i, iter);
+                            lastdraw = i;
+                            iter++;
+                        }
+
+                    }
+                    double velp = 0;
+                    for(Particle part : particles){
+                        velp+= Math.sqrt(part.vx*part.vx + part.vy*part.vy);
+                    }
+                    //System.out.println(velp /particles.size());
+                    addPressure(c);
+                    currentTime = collide(c);
                 }
             }
         }
-        System.out.println("Empezo el estacionario en: " + startStationary);
-        System.out.println("Presion total: " + pressure);
-        System.out.println("Area: " + (width*height));
-        System.out.println("Tiempo total: " + (maxTime  - startStationary));
-        pressure /= (maxTime  - startStationary);
-        pressure /= width*height;
-        System.out.println(pressure);
-        System.out.println("SQRT:" + Math.sqrt(pressure));
-        System.out.println("T:" + (pressure*(2*width + 2*height)/(particles.size()*1.38*Math.pow(10,-23))) );
-        dist.close();
-        dist = new FileWriter("dist.txt");
-        for(Point2D p : distribution){
-            dist.write(p.getX() + "\t" + p.getY() + "\n");
+        */
+        printData(startStationary);
+        return pressure;
+    }
+
+    private double collide(Collision c){
+        double currentTime = c.time;
+        updateAllParticles(currentTime);
+        c.collide();
+        setCollision(c.p1, currentTime);
+        if (c.p2 != null) {
+            setCollision(c.p2, currentTime);
         }
-        dist.close();
+        return currentTime;
+    }
+    private void saveValues(double i,int iter){
+        updateAllParticles(i);
+        values.add(new ArrayList<>(boxSize + particles.size()));
+        values.get(iter).add(printBox().toString());
+
+        for (Particle p : particles)
+            values.get(iter).add((int)(p.x*intFactor) + "\t" + (int)(p.y*intFactor) + "\t" + (int)(p.radius*intFactor) + "\t" + (int)(p.getMod()*intFactor) + "\n");
     }
 
     private void addPressure(Collision c) {
@@ -90,7 +154,7 @@ public class GasSimulation {
         }
     }
 
-    private void getDistribution(double time) {
+    private void getDistribution(double time,boolean save) {
         double left = 0,right = 0;
         for(Particle p : particles){
             if(p.x < width / 2){
@@ -99,8 +163,10 @@ public class GasSimulation {
                 right+=1;
             }
         }
-        distribution.add(new Point2D.Double(left / particles.size(),right / particles.size()));
-        if(left / particles.size() > 0.48 && left / particles.size() < 0.52){
+        if(save) {
+            distribution.add(new Point2D.Double(left / particles.size(), right / particles.size()));
+        }
+        if(left / particles.size() > 0.49 && left / particles.size() < 0.51){
             if(!stationary){
                 startStationary = time;
             }
@@ -108,25 +174,26 @@ public class GasSimulation {
         }
     }
 
-    private int printBox(StringBuilder s) {
+    private StringBuilder printBox() {
         int count = 0;
-        for(double i = 0; i<height;i+=0.001){
-            s.append(0 + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
-            s.append(width + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
+        StringBuilder s = new StringBuilder();
+        for(int i = 0; i<heightInt;i+=0.001*intFactor){
+            s.append(0 + "\t" + i + "\t" + (int)(0.0015*intFactor) + "\t0\n");
+            s.append(widthInt + "\t" + i + "\t" + (int)(0.0015*intFactor) + "\t0\n");
             count+= 2;
-            if(i< (height / 2 - apertura) || i > (height / 2 + apertura)){
-                s.append((width /2) + "\t" + i + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
+            if(i< (heightInt / 2 - apertura*intFactor /2 - 0.0015*intFactor) || i > (heightInt / 2 + apertura*intFactor/ 2 + 0.0015*intFactor )){
+                s.append((widthInt/2) + "\t" + i + "\t" + (int)(0.0015*intFactor) + "\t0\n");
                 count++;
             }
         }
-        for(double i = 0; i<width;i+=0.001){
-            s.append(i + "\t" + height + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
-            s.append(i + "\t" + 0 + "\t" + 0.0015 + "\t" + 0 + "\t" + 0 + "\t0\n");
+        for(int i = 0; i<widthInt;i+=0.001*intFactor){
+            s.append(i + "\t" + heightInt + "\t" + (int)(0.0015*intFactor) + "\t0\n");
+            s.append(i + "\t" + 0 + "\t" + (int)(0.0015*intFactor) + "\t0\n");
             count+= 2;
         }
-        return count;
+        boxSize = count;
+        return s;
     }
-
     private void updateAllParticles(double time) {
         for(Particle p: particles){
             p.update(time);
